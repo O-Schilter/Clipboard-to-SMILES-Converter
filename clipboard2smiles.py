@@ -11,11 +11,16 @@ import pyperclip
 import os
 import subprocess
 import shutil
+import requests
 import csv
 import rdkit
+import re
 import sys
-
+import socket
+from api_conversions import smiles_to_cas_api,smiles_to_iupac_api,cas_to_price_api, iupac_to_smiles_api
 from rdkit.Chem import Descriptors
+
+
 sys.setrecursionlimit(5000)
 
 
@@ -43,6 +48,9 @@ class ClipboardImageSaverApp(rumps.App):
         # Define history file and initialize empty history
         self.csv_file_path = Path("smiles.csv")
         self.smiles_history = []
+        self.purchase_link = ''
+        self.internet_connection = False
+
 
         # Create a MolScribe model instance
         self.model = MolScribe(
@@ -56,15 +64,29 @@ class ClipboardImageSaverApp(rumps.App):
         self.smiles_to_can_smiles_button = rumps.MenuItem(
             "Canonicalize Clipboard SMILES", callback=self.clipboard_smiles_to_canonical_smiles)
 
+        # Api Related checks
+        self.smiles_to_cas_button = rumps.MenuItem(
+            "Convert Clipboard SMILES to CAS", callback=self.clipboard_smiles_to_cas)
+        self.smiles_to_iupac_button = rumps.MenuItem(
+            "Convert Clipboard SMILES to IUPAC", callback=self.clipboard_smiles_to_iupac)
+        
+
+        self.smiles_to_price_button = rumps.MenuItem(
+            "Convert Clipboard to Price", callback=self.clipboard_conversion_price)
+        
+
         # Create a menu item for automatically monitoring the clipboard for molecules
         self.clipboard_to_smiles_watcher_button = rumps.MenuItem(
-            "Watch Clipboard for Molecules", callback=self.start_clipboard_to_smiles_timer, key='V')
+            "Watch Clipboard for Molecules", callback=self.start_clipboard_to_smiles_timer)
 
         # Create a menu item for showing the SMILES history
         self.open_history_file_button = rumps.MenuItem(
             title='Open History File', callback=self.open_history_file)
         self.history_item_smiles = rumps.MenuItem(
             "Copy SMILES from History", callback=self.show_history)
+        
+        self.history_item_price = rumps.MenuItem(
+            "Find price from History", callback=self.show_history)
         self.history_image_item = rumps.MenuItem(
             title='Copy Image from History', callback=self.show_history)
         
@@ -101,7 +123,11 @@ class ClipboardImageSaverApp(rumps.App):
         # Add the menu items to the app's menu
         self.app.menu = [self.image_to_smiles_button,
                          self.smiles_to_image_button,
+                         self.smiles_to_cas_button,
+                         self.smiles_to_iupac_button,
                          self.smiles_to_can_smiles_button,
+                         None,
+                         self.smiles_to_price_button,
                          None,
                          self.description_detection_button,
                          self.clipboard_to_smiles_watcher_button,
@@ -109,6 +135,7 @@ class ClipboardImageSaverApp(rumps.App):
                          self.open_history_file_button,
                          self.history_item_smiles,
                          self.history_image_item,
+                         self.history_item_price,
                          self.history_ms_item,
                          # self.history_price_item,
                          None,
@@ -123,12 +150,67 @@ class ClipboardImageSaverApp(rumps.App):
         def notification_center(info):
             if info.data == 'stop_collecting':
                 self.stop_clipboard_image_queue_timer('')
+            elif info.data == 'open_purchase_link':
+                os.system("open \"\" "+self.purchase_link)
 
     def start_clipboard_to_smiles_timer(self, sender):
         self.clipboard_to_smiles_watcher_button.title = '🛑 End Molecule watching'
         self.clipboard_to_smiles_watcher_button.set_callback(
             self.stop_clipboard_to_smiles_timer)
         self.clipboard_to_smiles_timer.start()
+
+
+    def clipoard_content_indentification(self):
+        clip = ImageGrab.grabclipboard()
+
+        if isinstance(clip, Image.Image) and clip != self.last_image_cache:
+            return 'image'
+        
+        clip = pyperclip.paste()
+        if clip:
+            try:
+                mol = Chem.MolFromSmiles(clip)
+                if mol:
+                    return 'smiles'
+            except:
+                print('Not SMILES')
+
+            if re.match(r'^\d+-\d+-\d+$', clip):
+                return 'cas'
+            
+
+
+
+    def clipboard_conversion_price(self,sender):
+        clipboard_input_type = self.clipoard_content_indentification()
+        print('clipboard_input_type',clipboard_input_type)
+        cas = False
+        if clipboard_input_type == 'image':
+            smiles = self.clipboard_image_to_smiles('')
+            cas = smiles_to_cas_api(smiles)
+        elif clipboard_input_type == 'smiles':
+            smiles = pyperclip.paste()
+            cas = smiles_to_cas_api(smiles)
+        elif clipboard_input_type == 'cas':
+            cas = pyperclip.paste()
+        else:
+            print('try iupac conversion')
+            smiles = iupac_to_smiles_api(pyperclip.paste())
+            if smiles:
+                cas = smiles_to_cas_api(smiles[0])
+
+        if cas:
+            price_dict = cas_to_price_api(cas,vendor='ChemieBrunschwieg')
+            self.purchase_link = price_dict['link']
+            rumps.notification(f'💰 Buy {price_dict["ItemName"]}',
+                f'{price_dict["Packsize"]} for {price_dict["Preis"]} CHF',f'or {price_dict["price_per"]:2} CHF/g',
+            action_button='Open Link',
+            data='open_purchase_link', icon='pictograms/carlos_helper_good.png')
+        elif clipboard_input_type !='image':
+            rumps.notification('🔁 Clipboard content could not be converted into CAS', '',
+                'The Clipboard content provided was:'+str(pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_bad.png')
+
+
 
     def stop_clipboard_to_smiles_timer(self, sender):
         self.clipboard_to_smiles_watcher_button.title = 'Watch Clipboard for Molecules'
@@ -191,16 +273,14 @@ class ClipboardImageSaverApp(rumps.App):
 
     def clipboard_image_to_smiles(self, state):
         # Get the image data from the clipboard
-        file_path = self.get_image_from_clipboard()
-        print(file_path,)
+        file_path = self.get_image_from_clipboard(state)
         if not isinstance(state, rumps.Timer):
             notifications = True
         else:
             notifications = False
 
         if file_path:
-            print(file_path)
-            self.image_to_smiles(
+            return self.image_to_smiles(
                 file_path, save_smiles_to_clipboard=True, notifications=notifications)
         else:
             if notifications:
@@ -212,6 +292,39 @@ class ClipboardImageSaverApp(rumps.App):
         file_name, timestamp, image_path = self.smiles_to_image(clip_content)
         if file_name:
             self.copy_image_to_clipboard(image_path=image_path)
+
+    def clipboard_smiles_to_cas(self, sender):
+        clip_content = pyperclip.paste()
+        try:
+            print(clip_content)
+            cas = smiles_to_cas_api(clip_content)
+            if cas:
+                pyperclip.copy(cas)
+                rumps.notification("✅ Cas found for SMILES:", 'Copied into Clipboard', str(
+                    cas), sound=False, icon='pictograms/carlos_helper_good.png')
+            else:
+                rumps.notification("🚫 No CAS found for SMILES", "provided smiles:  "+str(
+                clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
+
+        except:
+            rumps.notification("🚫 Not valid smiles entered", "provided smiles:  "+str(
+                clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
+
+    def clipboard_smiles_to_iupac(self, sender):
+            clip_content = pyperclip.paste()
+            try:
+                iupac = smiles_to_iupac_api(clip_content)
+                if iupac:
+                    pyperclip.copy(iupac[0])
+                    rumps.notification("✅ IUPAC found for SMILES:", 'Copied into Clipboard', str(
+                        iupac[0]), sound=False, icon='pictograms/carlos_helper_good.png')
+                else:
+                    rumps.notification("🚫 No IUPAC found for SMILES", "provided smiles:  "+str(
+                    clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
+
+            except:
+                rumps.notification("🚫 Not valid smiles entered", "provided smiles:  "+str(
+                    clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
 
     def clipboard_smiles_to_canonical_smiles(self, state):
         clip_content = pyperclip.paste()
@@ -286,7 +399,7 @@ class ClipboardImageSaverApp(rumps.App):
                 pyperclip.copy(smiles)
                 rumps.notification(
                     '✅ Image successfully converted', 'SMILES copied into clipboard', '', sound=False, icon='pictograms/carlos_helper_bad.png')
-
+            return smiles
         else:
             os.remove(image_path)
             if notifications:
@@ -321,11 +434,12 @@ class ClipboardImageSaverApp(rumps.App):
             # Get the header row and find the index of the "smiles" column
             header_row = next(reader)
             smiles_col_index = header_row.index("smiles")
+            image_file_col_index = header_row.index(" image_file")
 
             # Loop through the rows of the CSV file and select all entries from the "smiles" column
             smiles_list = []
             for row in reader:
-                smiles_list.append(row[smiles_col_index])
+                smiles_list.append((row[smiles_col_index],row[image_file_col_index]))
         self.smiles_history = smiles_list[-self.length_history:]
 
     def show_history(self):
@@ -352,22 +466,35 @@ class ClipboardImageSaverApp(rumps.App):
         def factory_price(value):
             def f(value):
                 pyperclip.copy(value.title)
+                self.clipboard_conversion_price('')
                 return
             return f
 
-        for hist_entry in reversed(self.smiles_history):
-            build_function_smiles = factory(hist_entry)
-            build_function_image = factory_image(hist_entry)
-            ms_dict = self.smiles_to_ms_peaks(hist_entry)
+        for hist_smi, hist_img_file in reversed(self.smiles_history):
+            build_function_smiles = factory(hist_smi)
+            build_function_image = factory_image(hist_smi)
+            build_function_price = factory_price(hist_smi)
+            ms_dict = self.smiles_to_ms_peaks(hist_smi)
+            
+            if hist_img_file=='False':
+                self.history_item_smiles.add(rumps.MenuItem(
+                hist_smi, callback=build_function_smiles))
+                self.history_image_item.add(rumps.MenuItem(
+                    hist_smi, callback=build_function_image,))
+                self.history_item_price.add(rumps.MenuItem(
+                    hist_smi, callback=build_function_price,))
+            else:
+                self.history_image_item.add(rumps.MenuItem(
+                    hist_smi, callback=build_function_image, icon=str(self.image_generated_dir/hist_img_file),dimensions=[75,75]))
+                self.history_item_smiles.add(rumps.MenuItem(
+                    hist_smi, callback=build_function_smiles,icon=str(self.image_generated_dir/hist_img_file),dimensions=[75,75]))
+                self.history_item_price.add(rumps.MenuItem(
+                    hist_smi, callback=build_function_price,icon=str(self.image_generated_dir/hist_img_file),dimensions=[75,75]))
 
-            self.history_item_smiles.add(rumps.MenuItem(
-                hist_entry, callback=build_function_smiles))
-            self.history_image_item.add(rumps.MenuItem(
-                hist_entry, callback=build_function_image))
 
             if ms_dict:
                 temp_history = rumps.MenuItem(
-                    hist_entry, callback=build_function_smiles)
+                    hist_smi, callback=build_function_smiles)
                 for key in ms_dict:
                     left_aligned = f"{key:<{9}}"
                     temp = f'{ms_dict[key]:.3f}'
@@ -382,11 +509,16 @@ class ClipboardImageSaverApp(rumps.App):
         self.history_item_smiles.clear()
         self.history_image_item.clear()
         self.history_ms_item.clear()
+        self.history_item_price.clear()
         self.read_history()
         self.show_history()
 
     def open_history_file(self, sender):
         os.system(f"open {self.csv_file_path}")
+
+
+            
+    
 
 
 if __name__ == '__main__':
