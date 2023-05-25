@@ -67,9 +67,9 @@ python - <<'EOF'
 from huggingface_hub import hf_hub_download
 import shutil
 
-output_folder_path = hf_hub_download('yujieq/MolScribe', 'swin_base_char_aux_1m.pth')
-
-shutil.copytree(output_folder_path, './')
+output_ckp_path = hf_hub_download('yujieq/MolScribe', 'swin_base_char_aux_1m.pth')
+output_folder_path = '/'.join(output_ckp_path.split('/')[:-3])
+shutil.copytree(output_folder_path, './models--yujieq--MolScribe')
 EOF
 ```
 
