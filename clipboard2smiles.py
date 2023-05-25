@@ -1,7 +1,6 @@
 from molscribe import MolScribe
 from PIL import ImageGrab
 from PIL import Image
-from datetime import datetime
 from pathlib import Path
 from rdkit import Chem
 import chemdraw
@@ -11,16 +10,17 @@ import pyperclip
 import os
 import subprocess
 import shutil
-import requests
 import csv
 import rdkit
+from datetime import datetime
+
 import re
 import sys
-import socket
-from api_conversions import smiles_to_cas_api,smiles_to_iupac_api,cas_to_price_api, iupac_to_smiles_api
-from rdkit.Chem import Descriptors
+from api_conversions import smiles_to_cas_api,smiles_to_iupac_api,cas_to_price_api, iupac_to_smiles_api,cas_to_smiles_api,cas_to_iupac_api,iupac_to_cas_api
+from utils import create_filename_from_smiles,smiles_to_ms_peaks
+import requests
 
-
+print(requests.certs.where())
 sys.setrecursionlimit(5000)
 
 
@@ -57,22 +57,22 @@ class ClipboardImageSaverApp(rumps.App):
             self.model_path, device=torch.device(self.model_device))
 
         # Create menu items for saving clipboard images and manipulating SMILES
-        self.image_to_smiles_button = rumps.MenuItem(
-            "Convert Clipboard Image to SMILES", callback=self.clipboard_image_to_smiles, key='V')
-        self.smiles_to_image_button = rumps.MenuItem(
-            "Convert Clipboard SMILES to Image", callback=self.clipboard_smiles_to_image)
+        self.to_smiles_button = rumps.MenuItem(
+            "Convert Clipboard to SMILES", callback=self.clipboard_to_smiles, key='V')
+        self.to_image_button = rumps.MenuItem(
+            "Convert Clipboard to Image", callback=self.clipboard_to_image)
         self.smiles_to_can_smiles_button = rumps.MenuItem(
             "Canonicalize Clipboard SMILES", callback=self.clipboard_smiles_to_canonical_smiles)
 
         # Api Related checks
-        self.smiles_to_cas_button = rumps.MenuItem(
-            "Convert Clipboard SMILES to CAS", callback=self.clipboard_smiles_to_cas)
-        self.smiles_to_iupac_button = rumps.MenuItem(
-            "Convert Clipboard SMILES to IUPAC", callback=self.clipboard_smiles_to_iupac)
+        self.to_cas_button = rumps.MenuItem(
+            "Convert Clipboard to CAS", callback=self.clipboard_to_cas)
         
+        self.to_iupac_button = rumps.MenuItem(
+            "Convert Clipboard to IUPAC", callback=self.clipboard_to_iupac)
 
-        self.smiles_to_price_button = rumps.MenuItem(
-            "Convert Clipboard to Price", callback=self.clipboard_conversion_price)
+        self.to_price_button = rumps.MenuItem(
+            "Convert Clipboard to Price", callback=self.clipboard_to_price)
         
 
         # Create a menu item for automatically monitoring the clipboard for molecules
@@ -121,13 +121,13 @@ class ClipboardImageSaverApp(rumps.App):
             self.get_image_from_clipboard, 0.5)
 
         # Add the menu items to the app's menu
-        self.app.menu = [self.image_to_smiles_button,
-                         self.smiles_to_image_button,
-                         self.smiles_to_cas_button,
-                         self.smiles_to_iupac_button,
+        self.app.menu = [self.to_smiles_button,
+                         self.to_image_button,
+                         self.to_cas_button,
+                         self.to_iupac_button,
                          self.smiles_to_can_smiles_button,
                          None,
-                         self.smiles_to_price_button,
+                         self.to_price_button,
                          None,
                          self.description_detection_button,
                          self.clipboard_to_smiles_watcher_button,
@@ -163,7 +163,7 @@ class ClipboardImageSaverApp(rumps.App):
     def clipoard_content_indentification(self):
         clip = ImageGrab.grabclipboard()
 
-        if isinstance(clip, Image.Image) and clip != self.last_image_cache:
+        if isinstance(clip, Image.Image):
             return 'image'
         
         clip = pyperclip.paste()
@@ -178,15 +178,12 @@ class ClipboardImageSaverApp(rumps.App):
             if re.match(r'^\d+-\d+-\d+$', clip):
                 return 'cas'
             
-
-
-
-    def clipboard_conversion_price(self,sender):
+    def clipboard_to_price(self,sender):
         clipboard_input_type = self.clipoard_content_indentification()
         print('clipboard_input_type',clipboard_input_type)
         cas = False
         if clipboard_input_type == 'image':
-            smiles = self.clipboard_image_to_smiles('')
+            smiles = self.clipboard_image_to_smiles(notifications=False)
             cas = smiles_to_cas_api(smiles)
         elif clipboard_input_type == 'smiles':
             smiles = pyperclip.paste()
@@ -195,11 +192,10 @@ class ClipboardImageSaverApp(rumps.App):
             cas = pyperclip.paste()
         else:
             print('try iupac conversion')
-            smiles = iupac_to_smiles_api(pyperclip.paste())
-            if smiles:
-                cas = smiles_to_cas_api(smiles[0])
+            cas = iupac_to_cas_api(pyperclip.paste())
 
         if cas:
+            print('cas',cas)
             price_dict = cas_to_price_api(cas,vendor='ChemieBrunschwieg')
             self.purchase_link = price_dict['link']
             rumps.notification(f'💰 Buy {price_dict["ItemName"]}',
@@ -209,6 +205,149 @@ class ClipboardImageSaverApp(rumps.App):
         elif clipboard_input_type !='image':
             rumps.notification('🔁 Clipboard content could not be converted into CAS', '',
                 'The Clipboard content provided was:'+str(pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_bad.png')
+
+    def clipboard_to_iupac(self,sender):
+        clipboard_input_type = self.clipoard_content_indentification()
+        iupac = False
+        if clipboard_input_type == 'image':
+            smiles = self.clipboard_image_to_smiles(sender,notifications=False)
+            iupac = smiles_to_iupac_api(smiles)
+            if iupac:
+                pyperclip.copy(iupac)
+                rumps.notification("✅ IUPAC found for Image: ", 'Copied into Clipboard', 
+                                    str(iupac), sound=False, icon='pictograms/carlos_helper_good.png')
+            else: 
+                rumps.notification("🚫 Couldn't convert Clipboard into IUPAC "+str(pyperclip.paste()), 'No IUPAC name found for', str(
+                pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+
+        elif clipboard_input_type == 'smiles':
+            smiles = pyperclip.paste()
+            iupac = smiles_to_iupac_api(smiles)
+            if iupac:
+                pyperclip.copy(iupac)
+                self.smiles_to_history(smiles)
+                rumps.notification("✅ IUPAC found for SMILES: "+str(smiles), 'Copied into Clipboard', 
+                                    str(iupac), sound=False, icon='pictograms/carlos_helper_good.png')
+            else: 
+                rumps.notification("🚫 Couldn't convert Clipboard into IUPAC "+str(pyperclip.paste()), 'No IUPAC name found for', str(
+                pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+
+        elif clipboard_input_type == 'cas':
+            cas = pyperclip.paste()
+            iupac = cas_to_iupac_api(cas)
+            if iupac:
+                pyperclip.copy(iupac)
+                rumps.notification("✅ IUPAC found for CAS: "+str(cas), 'Copied into Clipboard', 
+                                    str(iupac), sound=False, icon='pictograms/carlos_helper_good.png')
+                
+                smiles = cas_to_smiles_api(cas)
+                self.smiles_to_history(smiles)
+            else: 
+                rumps.notification("🚫 Couldn't convert Clipboard into IUPAC "+str(pyperclip.paste()), 'No IUPAC name found for', str(
+                pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+        else:
+            rumps.notification("🚫 Couldn't convert Clipboard into IUPAC "+str(pyperclip.paste()), 'No IUPAC name found for', str(
+            pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+
+    def clipboard_to_image(self,sender):
+        smiles = self.clipboard_to_smiles(sender)
+        if smiles:
+            file_name, timestamp, image_path = self.smiles_to_image(smiles)
+            if file_name:
+                self.copy_image_to_clipboard(image_path=image_path)
+
+    def clipboard_to_smiles(self,sender,notifications=True):
+        clipboard_input_type = self.clipoard_content_indentification()
+        smiles = False
+        if clipboard_input_type == 'image':
+            smiles = self.clipboard_image_to_smiles(sender,notifications=False)
+            return smiles
+        elif clipboard_input_type == 'smiles':
+            smiles =  pyperclip.paste()
+            self.smiles_to_history(smiles)
+            return smiles
+        elif clipboard_input_type == 'cas':
+            cas = pyperclip.paste()
+            smiles = cas_to_smiles_api(cas)
+            if smiles:
+                pyperclip.copy(smiles)
+                self.smiles_to_history(smiles)
+                if notifications:
+                    rumps.notification("✅ SMILES found for CAS: "+str(cas), 'Copied into Clipboard', str(
+                        smiles), sound=False, icon='pictograms/carlos_helper_good.png')
+                return smiles
+            else:
+                if notifications:
+                    rumps.notification("🚫 Couldn't convert Clipboard into SMILES "+str(pyperclip.paste()), 'No SMILES found for', str(
+                    pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+        else:
+            print('try iupac conversion')
+            smiles = iupac_to_smiles_api(pyperclip.paste())
+            if smiles:
+                if notifications:
+                    rumps.notification("✅ SMILES found for IUPAC: "+str(pyperclip.paste()), 'Copied into Clipboard', str(
+                        smiles), sound=False, icon='pictograms/carlos_helper_good.png')
+                pyperclip.copy(smiles)
+                self.smiles_to_history(smiles)
+                return smiles
+            else:
+                if notifications:
+                    rumps.notification("🚫 Couldn't convert Clipboard into SMILES "+str(pyperclip.paste()), 'No SMILES found for', str(
+                    pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+
+    def clipboard_to_cas(self,sender):
+        clipboard_input_type = self.clipoard_content_indentification()
+        cas = False
+        print('clipboard_input_type',clipboard_input_type, pyperclip.paste(),)
+        if clipboard_input_type == 'image':
+            smiles = self.clipboard_image_to_smiles(sender,notifications=False)
+            cas = smiles_to_cas_api(smiles)
+            if cas:
+                pyperclip.copy(cas)
+                rumps.notification("✅ CAS found for Image: ", 'Copied into Clipboard', 
+                                    str(cas), sound=False, icon='pictograms/carlos_helper_good.png')
+        elif clipboard_input_type == 'smiles':
+            smiles = pyperclip.paste()
+            cas = smiles_to_cas_api(smiles)
+            if cas:
+                pyperclip.copy(cas)
+                self.smiles_to_history(smiles)
+                rumps.notification("✅ CAS found for SMILES: ", 'Copied into Clipboard', 
+                                    str(cas), sound=False, icon='pictograms/carlos_helper_good.png')
+            else:
+                rumps.notification("🚫 Couldn't convert Clipboard into CAS "+str(pyperclip.paste()), 'No CAS found for', str(
+                pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+
+
+        elif clipboard_input_type == 'cas':
+            smiles = cas_to_smiles_api(pyperclip.paste())
+            if smiles:
+                self.smiles_to_history(smiles)
+                rumps.notification("✅ CAS already in clipboard "+str(pyperclip.paste()), 'Copied into Clipboard', str(
+                    pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+        else:
+            cas = iupac_to_cas_api(pyperclip.paste())
+            if cas:
+                rumps.notification("✅ CAS found for IUPAC: "+str(pyperclip.paste()), 'Copied into Clipboard', str(
+                    cas), sound=False, icon='pictograms/carlos_helper_good.png')
+                pyperclip.copy(cas)
+                smiles = cas_to_smiles_api(cas)
+                self.smiles_to_history(smiles)
+            else:
+                rumps.notification("🚫 Couldn't convert Clipboard into CAS "+str(pyperclip.paste()), 'No CAS found for', str(
+                pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+
+    def clipboard_smiles_to_canonical_smiles(self, state):
+        clip_content = pyperclip.paste()
+        try:
+            smiles = Chem.MolToSmiles(Chem.MolFromSmiles(clip_content))
+            pyperclip.copy(smiles)
+            rumps.notification("✅ Canonicalized SMILES:", 'Copied into Clipboard', str(
+                smiles), sound=False, icon='pictograms/carlos_helper_good.png')
+            return smiles 
+        except:
+            rumps.notification("🚫 Not valid smiles entered", "provided smiles:  "+str(
+                clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
 
 
 
@@ -236,14 +375,6 @@ class ClipboardImageSaverApp(rumps.App):
         self.clipboard_to_image_queue_timer.stop()
         self.batch_images_to_smiles('_')
 
-    def open_queue_folder(self, sender):
-        os.system(f"open {self.image_input_dir}")
-
-    def create_filename_from_smiles(self, smiles):
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        smiles_for_filename = "".join(x for x in smiles if x.isalnum())
-        new_filename = f'{timestamp}_{smiles_for_filename}.png'
-        return new_filename, timestamp
 
     def get_image_from_clipboard(self, state):
         im = ImageGrab.grabclipboard()
@@ -271,12 +402,10 @@ class ClipboardImageSaverApp(rumps.App):
             rumps.notification("🚫 Failed to load Image into clipboard",
                                '', str(image_path), sound=False,  icon='pictograms/carlos_helper_bad.png')
 
-    def clipboard_image_to_smiles(self, state):
+    def clipboard_image_to_smiles(self, state, notifications=True):
         # Get the image data from the clipboard
         file_path = self.get_image_from_clipboard(state)
-        if not isinstance(state, rumps.Timer):
-            notifications = True
-        else:
+        if isinstance(state, rumps.Timer):
             notifications = False
 
         if file_path:
@@ -287,95 +416,9 @@ class ClipboardImageSaverApp(rumps.App):
                 rumps.notification('🔁 Clipboard content is not an Image', '',
                                    'Add an Image of molecule to the clipboard', sound=False, icon='pictograms/carlos_helper_bad.png')
 
-    def clipboard_smiles_to_image(self, sender):
-        clip_content = pyperclip.paste()
-        file_name, timestamp, image_path = self.smiles_to_image(clip_content)
-        if file_name:
-            self.copy_image_to_clipboard(image_path=image_path)
-
-    def clipboard_smiles_to_cas(self, sender):
-        clip_content = pyperclip.paste()
-        try:
-            print(clip_content)
-            cas = smiles_to_cas_api(clip_content)
-            if cas:
-                pyperclip.copy(cas)
-                rumps.notification("✅ Cas found for SMILES:", 'Copied into Clipboard', str(
-                    cas), sound=False, icon='pictograms/carlos_helper_good.png')
-            else:
-                rumps.notification("🚫 No CAS found for SMILES", "provided smiles:  "+str(
-                clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
-
-        except:
-            rumps.notification("🚫 Not valid smiles entered", "provided smiles:  "+str(
-                clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
-
-    def clipboard_smiles_to_iupac(self, sender):
-            clip_content = pyperclip.paste()
-            try:
-                iupac = smiles_to_iupac_api(clip_content)
-                if iupac:
-                    pyperclip.copy(iupac[0])
-                    rumps.notification("✅ IUPAC found for SMILES:", 'Copied into Clipboard', str(
-                        iupac[0]), sound=False, icon='pictograms/carlos_helper_good.png')
-                else:
-                    rumps.notification("🚫 No IUPAC found for SMILES", "provided smiles:  "+str(
-                    clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
-
-            except:
-                rumps.notification("🚫 Not valid smiles entered", "provided smiles:  "+str(
-                    clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
-
-    def clipboard_smiles_to_canonical_smiles(self, state):
-        clip_content = pyperclip.paste()
-        try:
-            smiles = Chem.MolToSmiles(Chem.MolFromSmiles(clip_content))
-            pyperclip.copy(smiles)
-            rumps.notification("✅ Canonicalized SMILES:", 'Copied into Clipboard', str(
-                smiles), sound=False, icon='pictograms/carlos_helper_good.png')
-        except:
-            rumps.notification("🚫 Not valid smiles entered", "provided smiles:  "+str(
-                clip_content), '', sound=False, icon='pictograms/carlos_helper_bad.png')
-
-    def smiles_to_image(self, smiles):
-        try:
-            file_name, timestamp = self.create_filename_from_smiles(smiles)
-            print(file_name)
-            drawer = chemdraw.Drawer(smiles)
-            print(drawer)
-            image_path = self.image_generated_dir / file_name
-            # Write image to file
-            fig = drawer.draw()
-            fig.write_image(image_path)
-            return file_name, timestamp, image_path
-        except:
-            rumps.notification(
-                "🚫 Failed to convert SMILES to image", '', str(smiles), sound=False, icon='pictograms/carlos_helper_bad.png')
-            return False, False, False
-
-    def remove_over_max_images(self,):
-        # delete old images if more than self.max_n_images:
-        all_files = sorted(self.image_output_dir.glob('*.png'))
-        if len(all_files) > self.max_n_images:
-            for old_file in all_files[:-self.max_n_images:]:
-                os.remove(old_file)
-        all_files = sorted(self.image_generated_dir.glob('*.png'))
-        if len(all_files) > self.max_n_images:
-            for old_file in all_files[:-self.max_n_images:]:
-                os.remove(old_file)
-
-    def batch_images_to_smiles(self, _):
-        print('Start processing all images in folder')
-        for i, filename in enumerate(os.listdir(self.image_input_dir)):
-            if filename.endswith('.png'):
-                image_path = str(self.image_input_dir / str(filename))
-                self.image_to_smiles(
-                    image_path, save_smiles_to_clipboard=False, notifications=False)
-
     def image_to_smiles(self, image_path, save_smiles_to_clipboard=True, notifications=True):
         # generate smiles and rename image
         # image_path = self.image_input_dir / filename
-        print(image_path)
         with torch.no_grad():
             output = self.model.predict_image_file(
                 image_path, return_atoms_bonds=False, return_confidence=True)
@@ -397,8 +440,9 @@ class ClipboardImageSaverApp(rumps.App):
 
             if save_smiles_to_clipboard:
                 pyperclip.copy(smiles)
-                rumps.notification(
-                    '✅ Image successfully converted', 'SMILES copied into clipboard', '', sound=False, icon='pictograms/carlos_helper_bad.png')
+                if notifications:
+                    rumps.notification(
+                        '✅ Image successfully converted', 'SMILES copied into clipboard', '', sound=False, icon='pictograms/carlos_helper_bad.png')
             return smiles
         else:
             os.remove(image_path)
@@ -406,21 +450,43 @@ class ClipboardImageSaverApp(rumps.App):
                 rumps.notification(
                     '🔁 Confidence lower than'+str(self.confidence_level), 'Retake screenshot', '', sound=False, icon='pictograms/carlos_helper_bad.png')
 
-    def smiles_to_ms_peaks(self, smiles):
+    def smiles_to_image(self, smiles, notifications=True):
         try:
-            mol_weight = Descriptors.ExactMolWt(
-                rdkit.Chem.MolFromSmiles(smiles))
-            return {'[M]': mol_weight,
-                    '[M+H]': mol_weight+1.007276,
-                    '[M+NH4]': mol_weight+18.033823,
-                    '[M+Na]': mol_weight+22.989218,
-                    '[M+K]': mol_weight+38.963158,
-                    '[2M+H]': 2*mol_weight+1.007276,
-                    '[2M+NH4]': 2*mol_weight+18.033823,
-                    '[2M+Na]': 2*mol_weight+22.989218,
-                    '[2M+K]': 2*mol_weight+38.963158}
+            file_name, timestamp = create_filename_from_smiles(smiles)
+            drawer = chemdraw.Drawer(smiles)
+            image_path = self.image_generated_dir / file_name
+            # Write image to file
+            drawer.draw_img(image_path)
+            return file_name, timestamp, image_path
         except:
-            return False
+            if notifications:
+                rumps.notification(
+                    "🚫 Failed to convert SMILES to image", '', str(smiles), sound=False, icon='pictograms/carlos_helper_bad.png')
+            return False, False, False
+
+    def remove_over_max_images(self,):
+        # delete old images if more than self.max_n_images:
+        all_files = sorted(self.image_output_dir.glob('*.png'))
+        if len(all_files) > self.max_n_images:
+            for old_file in all_files[:-self.max_n_images:]:
+                os.remove(old_file)
+        all_files = sorted(self.image_generated_dir.glob('*.png'))
+        if len(all_files) > self.max_n_images:
+            for old_file in all_files[:-self.max_n_images:]:
+                os.remove(old_file)
+
+    def batch_images_to_smiles(self, _):
+        print('Start processing all images in folder')
+        for i, filename in enumerate(os.listdir(self.image_input_dir)):
+            if filename.endswith('.png'):
+                image_path = str(self.image_input_dir / str(filename))
+                self.image_to_smiles(
+                    image_path, save_smiles_to_clipboard=False, notifications=False)
+
+    def smiles_to_history(self, smiles):
+        new_filename, timestamp, _ = self.smiles_to_image(smiles,notifications=False)
+        self.write_to_history(smiles, new_filename, timestamp)
+        self.update_history_menu()
 
     def write_to_history(self, smiles, new_filename, timestamp):
         with open(self.csv_file_path, 'a', newline='') as csvfile:
@@ -466,7 +532,7 @@ class ClipboardImageSaverApp(rumps.App):
         def factory_price(value):
             def f(value):
                 pyperclip.copy(value.title)
-                self.clipboard_conversion_price('')
+                self.clipboard_to_price('')
                 return
             return f
 
@@ -474,8 +540,7 @@ class ClipboardImageSaverApp(rumps.App):
             build_function_smiles = factory(hist_smi)
             build_function_image = factory_image(hist_smi)
             build_function_price = factory_price(hist_smi)
-            ms_dict = self.smiles_to_ms_peaks(hist_smi)
-            
+            ms_dict = smiles_to_ms_peaks(hist_smi)
             if hist_img_file=='False':
                 self.history_item_smiles.add(rumps.MenuItem(
                 hist_smi, callback=build_function_smiles))
@@ -516,6 +581,8 @@ class ClipboardImageSaverApp(rumps.App):
     def open_history_file(self, sender):
         os.system(f"open {self.csv_file_path}")
 
+    def open_queue_folder(self, sender):
+        os.system(f"open {self.image_input_dir}")
 
             
     

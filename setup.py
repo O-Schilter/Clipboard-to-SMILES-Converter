@@ -3,13 +3,13 @@ import sys
 sys.setrecursionlimit(5000)
 
 APP = ['clipboard2smiles.py']
-DATA_FILES = ['smiles.csv','pictograms','image_generated','image_output','image_queue','models--yujieq--MolScribe']
+DATA_FILES = ['smiles.csv','pictograms','image_generated','image_output','image_queue','models--yujieq--MolScribe','cacert.pem']
 OPTIONS = {
     'argv_emulation': True,
     'plist': {
         'LSUIElement': True,
     },
-    'packages': ['rumps','chardet'],
+    'packages': ['rumps','chardet','certifi','requests'],
     'iconfile': '/Users/oli/projects/carlos_helper/pictograms/carlos_helper_logo.icns'}
 
 setup(
