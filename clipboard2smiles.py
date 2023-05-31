@@ -36,7 +36,7 @@ class ClipboardImageSaverApp(rumps.App):
             icon='pictograms/carlos_helper_logo.png',
             template=True)
 
-        # Define some app settings
+        # Define app settings
         self.confidence_level = 0.66
         self.max_n_images = 25
         self.length_history = 8
@@ -57,21 +57,20 @@ class ClipboardImageSaverApp(rumps.App):
         # Create a MolScribe model instance
         self.model = MolScribe(
             self.model_path, device=torch.device(self.model_device))
+
+        # Create Converter class
         self.converter = Converter(model=self.model,
                                    image_input_dir=self.image_input_dir, image_generated_dir=self.image_generated_dir)
 
-        # Create menu items for saving clipboard images and manipulating SMILES
+        # Create menu items for chemical structure conversion
         self.to_smiles_button = rumps.MenuItem(
             "Convert Clipboard to SMILES", callback=partial(self.clipboard_to, output_format='smiles'))
         self.to_image_button = rumps.MenuItem(
             "Convert Clipboard to Image", callback=partial(self.clipboard_to, output_format='image'))
-
         self.to_cas_button = rumps.MenuItem(
             "Convert Clipboard to CAS", callback=partial(self.clipboard_to, output_format='cas'))
-
         self.to_iupac_button = rumps.MenuItem(
             "Convert Clipboard to IUPAC", callback=partial(self.clipboard_to, output_format='iupac'))
-
         self.to_inchi_button = rumps.MenuItem(
             "Convert Clipboard to InChI", callback=partial(self.clipboard_to, output_format='inchi'))
         self.to_mol_button = rumps.MenuItem(
@@ -79,48 +78,45 @@ class ClipboardImageSaverApp(rumps.App):
         self.to_selfies_button = rumps.MenuItem(
             "Convert Clipboard to Selfies", callback=partial(self.clipboard_to, output_format='selfies'))
 
+        # Clipboard SMILES operations
         self.smiles_to_smiles_button = rumps.MenuItem(
             "Clipboard SMILES Operations")
-
         self.smiles_to_smiles_button.add(rumps.MenuItem(
-            "Canonicalize SMILES",  callback=partial(self.clipboard_to, output_format='canonicalize')))
-
+            "Canonicalize SMILES", callback=partial(self.clipboard_to, output_format='canonicalize')))
         self.smiles_to_smiles_button.add(rumps.MenuItem(
-            "Augment SMILES",  callback=partial(self.clipboard_to, output_format='augment')))
-
+            "Augment SMILES", callback=partial(self.clipboard_to, output_format='augment')))
+        # self.smiles_to_smiles_button.add(rumps.MenuItem(
+        #     "Standardize Reaction SMILES", callback=partial(self.clipboard_to, output_format='standardize')))
         self.smiles_to_smiles_button.add(rumps.MenuItem(
-            "Standardize Reaction SMILES",  callback=partial(self.clipboard_to, output_format='standardize')))
+            "Remove Atom Mapping from SMILES",
+            callback=partial(self.clipboard_to, output_format='remove_atom_mapping')))
 
-        self.smiles_to_smiles_button.add(rumps.MenuItem(
-            "Remove Atom Mapping from SMILES",  callback=partial(self.clipboard_to, output_format='remove_atom_mapping')))
-
+        # Finde Price for molecules
         self.to_price_button = rumps.MenuItem(
             "Convert Clipboard to Price", callback=partial(self.clipboard_to, output_format='price'))
+        self.history_item_price = rumps.MenuItem(
+            "Find Price from History", callback=self.update_history_menu)
 
         # Create a menu item for automatically monitoring the clipboard for molecules
         self.clipboard_to_smiles_watcher_button = rumps.MenuItem(
             "Watch Clipboard for Molecules", callback=self.start_clipboard_to_smiles_timer)
 
-        # Create a menu item for showing the SMILES history
-        self.open_history_file_button = rumps.MenuItem(
-            title='Open History File', callback=self.open_history_file)
+        # Create a menu item for showing the history
+
         self.history_item_smiles = rumps.MenuItem(
             "Copy SMILES from History", callback=self.update_history_menu)
-
-        self.history_item_price = rumps.MenuItem(
-            "Find Price from History", callback=self.update_history_menu)
         self.history_structure_item = rumps.MenuItem(
             title='Copy Structure from History', callback=self.update_history_menu)
-
         self.history_molecular_properties_item = rumps.MenuItem(
             title='Molecular Properties from History', callback=self.update_history_menu)
+        self.open_history_file_button = rumps.MenuItem(
+            title='Open History File', callback=self.open_history_file)
 
-        # Initialize the SMILES history and load the previously saved SMILES strings
+        # Initialize the SMILES history and load the previously saved molecules
         self.read_history()
         self.show_history()
 
         # Set up a continuous monitoring queue
-        self.monitor_process = None
         self.description_detection_button = rumps.MenuItem(
             title='Continuous Molecule Detection')
         self.description_image_queue_button = rumps.MenuItem(
@@ -133,14 +129,18 @@ class ClipboardImageSaverApp(rumps.App):
         self.process_queue_folder_button = rumps.MenuItem(
             title='Process Image Queue', callback=self.batch_images_to_smiles)
 
+        # Options
         self.options_button = rumps.MenuItem(title='Options')
+
+        # Select Vendor Menu
         temp_option_menu = rumps.MenuItem(title='Select Vendor')
         temp_option_menu.add(rumps.MenuItem(
-            title='Chemie Brunschwieg', callback=self.select_vendor))
-        temp_option_menu.add(rumps.MenuItem(
             title='Enamine', callback=self.select_vendor))
-
+        temp_option_menu.add(rumps.MenuItem(
+            title='Chemie Brunschwieg', callback=self.select_vendor))
+        temp_option_menu['Enamine'].state = 1
         self.options_button.add(temp_option_menu)
+
         # Image cache, to only run conversion when a new Image is detected
         self.last_image_cache = None
         self.last_clipboard_cache = None
@@ -186,7 +186,7 @@ class ClipboardImageSaverApp(rumps.App):
             if info.data == 'stop_collecting':
                 self.stop_clipboard_image_queue_timer('')
             elif info.data == 'open_purchase_link':
-                os.system("open \"\" "+self.purchase_link)
+                os.system("open \"\" " + self.purchase_link)
 
     def select_vendor(self, sender):
         self.converter.vendors.select_vendor(sender.title.replace(' ', ''))
@@ -202,12 +202,30 @@ class ClipboardImageSaverApp(rumps.App):
             self.stop_clipboard_to_smiles_timer)
         self.clipboard_to_smiles_timer.start()
 
-    def clipoard_content_indentification(self):
+    def clipboard_content_identification(self):
+        """
+        Identifies the content type of the clipboard and returns a dictionary with the format and content.
+
+        Supported formats:
+        - Image
+        - SMILES
+        - InChI
+        - MOL
+        - Selfies
+        - Reaction SMILES
+        - CAS number
+        - IUPAC name
+
+        Returns:
+        dict: A dictionary with the format ('format') and content ('content') of the clipboard.
+        """
         clip = ImageGrab.grabclipboard()
 
         if isinstance(clip, Image.Image):
             return {'format': 'image', 'content': clip}
+
         clip = pyperclip.paste()
+
         if clip:
             try:
                 mol = Chem.MolFromSmiles(clip)
@@ -222,31 +240,32 @@ class ClipboardImageSaverApp(rumps.App):
                     if mol is not None:
                         return {'format': 'inchi', 'content': clip}
                 except:
-                    print("Invalid inchi")
+                    print("Invalid InChI")
+
             try:
                 mol = Chem.MolFromMolBlock(clip)
                 if mol is not None:
                     return {'format': 'mol', 'content': clip}
             except:
-                print("Invalid Mol file")
+                print("Invalid MOL file")
 
             try:
                 smi = sf.decoder(clip)
                 if smi is not None and smi != '' and len(smi) > 0:
-                    print('selfies converted to smiles', smi)
+                    print('Selfies converted to SMILES:', smi)
                     return {'format': 'selfies', 'content': clip}
             except:
-                print("Invalid Mol file")
+                print("Invalid Selfies")
 
             if '>' in clip:
-                print('> detected')
+                print('">" detected')
                 try:
                     rxn = AllChem.ReactionFromSmarts(clip)
-                    print('rxn', rxn)
+                    print('Reaction:', rxn)
                     if rxn:
                         return {'format': 'smiles', 'content': clip}
                 except:
-                    print('Not SMILES')
+                    print('Not Reaction SMILES')
 
             if re.match(r'^\d+-\d+-\d+$', clip):
                 return {'format': 'cas', 'content': clip}
@@ -254,8 +273,7 @@ class ClipboardImageSaverApp(rumps.App):
                 return {'format': 'iupac', 'content': clip}
 
     def clipboard_to(self, sender, output_format):
-
-        clipboard_input = self.clipoard_content_indentification()
+        clipboard_input = self.clipboard_content_identification()
         # Only do the check if the last clipboard was the same as previous if the called by a Timer
         if self.last_clipboard_cache == clipboard_input['content'] and isinstance(sender, rumps.Timer):
             print('same cache',
@@ -263,7 +281,6 @@ class ClipboardImageSaverApp(rumps.App):
             return
         else:
             self.last_clipboard_cache = clipboard_input['content']
-            print('not cache', clipboard_input['content'])
             output, smiles = self.converter.convert(
                 clipboard_input['content'], clipboard_input['format'], output_format)
             print('output_format', output_format,
@@ -298,18 +315,24 @@ class ClipboardImageSaverApp(rumps.App):
                                        str(output), action_button=' ')
 
             else:
-                rumps.notification(f"🚫 Couldn't convert Clipboard {output_format.capitalize()}  ", f"No {output_format.capitalize()} found for", str(
-                    pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
+                rumps.notification(f"🚫 Couldn't convert Clipboard {output_format.capitalize()}  ",
+                                   f"No {output_format.capitalize()} found for", str(
+                                       pyperclip.paste()), sound=False, icon='pictograms/carlos_helper_good.png')
             return output
 
     def stop_clipboard_to_smiles_timer(self, sender):
+        """
+        Stops the clipboard-to-SMILES timer and updates the watcher button.
+
+        Args:
+        - sender: The sender object that triggered the event.
+        """
         self.clipboard_to_smiles_watcher_button.title = 'Watch Clipboard for Molecules'
-        self.clipboard_to_smiles_watcher_button.set_callback(
-            self.start_clipboard_to_smiles_timer)
+        self.clipboard_to_smiles_watcher_button.set_callback(self.start_clipboard_to_smiles_timer)
         self.clipboard_to_smiles_timer.stop()
 
     def start_clipboard_image_queue_timer(self, sender):
-        self.clipboard_to_image_queue_button.title = '🛑 End Molecule watching'
+        self.clipboard_to_image_queue_button.title = '🛑 End Molecule Watching'
         self.clipboard_to_image_queue_button.set_callback(
             self.stop_clipboard_image_queue_timer)
         rumps.notification(title='Image Collector', subtitle='Collecting images...',
@@ -347,12 +370,15 @@ class ClipboardImageSaverApp(rumps.App):
         try:
             temp_path = os.path.abspath(image_path)
             subprocess.run(
-                ["osascript", "-e", 'set the clipboard to (read (POSIX file "'+str(temp_path)+'") as «class PNGf»)'])
+                ["osascript", "-e",
+                 'set the clipboard to (read (POSIX file "' + str(temp_path) + '") as «class PNGf»)'])
         except:
             rumps.notification("🚫 Failed to load Image into clipboard",
-                               '', str(image_path), sound=False,  icon='pictograms/carlos_helper_bad.png')
+                               '', str(image_path),
+                               sound=False,
+                               icon='pictograms/carlos_helper_bad.png')
 
-    def remove_over_max_images(self,):
+    def remove_over_max_images(self, ):
         # delete old images if more than self.max_n_images:
         all_files = sorted(self.image_output_dir.glob('*.png'))
         if len(all_files) > self.max_n_images:
@@ -364,7 +390,7 @@ class ClipboardImageSaverApp(rumps.App):
                 os.remove(old_file)
 
     def batch_images_to_smiles(self, _):
-        for i, filename in enumerate(os.listdir(self.image_input_dir)):
+        for filename in os.listdir(self.image_input_dir):
             if filename.endswith('.png'):
                 image_path = str(self.image_input_dir / str(filename))
                 smiles = self.converter.image_to_smiles(
@@ -372,7 +398,7 @@ class ClipboardImageSaverApp(rumps.App):
                 if smiles:
                     self.smiles_to_history(smiles)
 
-    def smiles_to_history(self, smiles, check_duplicates=False):
+    def smiles_to_history(self, smiles):
         try:
             filename = self.converter.smiles_to_image(smiles)
             new_filename = os.path.basename(filename)
@@ -419,6 +445,7 @@ class ClipboardImageSaverApp(rumps.App):
         def factory_copy_to_clip(value):
             def f(value):
                 pyperclip.copy(value.title)
+
             return f
 
         def factory_structure(value, input, output_format):
@@ -432,12 +459,13 @@ class ClipboardImageSaverApp(rumps.App):
                                            f"",
                                            str(output))
                     else:
-                        rumps.notification(f"🚫 Couldn't convert to {output_format.capitalize()}  ", f"No {output_format.capitalize()} found for", str(
-                            input), sound=False)
+                        rumps.notification(f"🚫 Couldn't convert to {output_format.capitalize()}  ",
+                                           f"No {output_format.capitalize()} found for", str(
+                                               input), sound=False)
                 elif output_format == 'smiles':
                     pyperclip.copy(input)
                     rumps.notification(f"✅ {output_format.capitalize()} copied to Clipboard",
-                                       f"",
+                                       '',
                                        str(input))
                 elif output_format == 'image':
                     self.copy_image_to_clipboard(image_path=input)
@@ -449,6 +477,7 @@ class ClipboardImageSaverApp(rumps.App):
                     self.clipboard_to(input, output_format='price')
                 else:
                     pyperclip.copy(input)
+
             return f
 
         for hist_smi, hist_img_file in reversed(self.smiles_history):
@@ -466,21 +495,23 @@ class ClipboardImageSaverApp(rumps.App):
                     hist_smi, callback=build_function_smiles))
 
                 self.history_item_price.add(rumps.MenuItem(
-                    hist_smi, callback=build_function_price,))
+                    hist_smi, callback=build_function_price, ))
                 temp_menu_structure = rumps.MenuItem(
-                    hist_smi,  icon=str(self.image_generated_dir/hist_img_file), dimensions=[75, 75])
+                    hist_smi, icon=str(self.image_generated_dir / hist_img_file), dimensions=[75, 75])
             else:
                 build_function_image = factory_structure(
-                    '', str(self.image_generated_dir/hist_img_file), 'image')
+                    '', str(self.image_generated_dir / hist_img_file), 'image')
                 temp_menu_structure = rumps.MenuItem(
-                    '',  icon=str(self.image_generated_dir/hist_img_file), dimensions=[75, 75])
+                    '', icon=str(self.image_generated_dir / hist_img_file), dimensions=[75, 75])
                 temp_menu_structure.add(rumps.MenuItem(
                     "Image", callback=build_function_image))
 
                 self.history_item_smiles.add(rumps.MenuItem(
-                    '', callback=build_function_smiles, icon=str(self.image_generated_dir/hist_img_file), dimensions=[75, 75]))
+                    '', callback=build_function_smiles, icon=str(self.image_generated_dir / hist_img_file),
+                    dimensions=[75, 75]))
                 self.history_item_price.add(rumps.MenuItem(
-                    '', callback=build_function_price, icon=str(self.image_generated_dir/hist_img_file), dimensions=[75, 75]))
+                    '', callback=build_function_price, icon=str(self.image_generated_dir / hist_img_file),
+                    dimensions=[75, 75]))
 
             temp_menu_structure.add(rumps.MenuItem(
                 "SMILES", callback=build_function_smiles))
@@ -503,7 +534,7 @@ class ClipboardImageSaverApp(rumps.App):
                 else:
                     temp_menu_properties = rumps.MenuItem(
                         '', callback=build_function_smiles,
-                        icon=str(self.image_generated_dir/hist_img_file), dimensions=[75, 75])
+                        icon=str(self.image_generated_dir / hist_img_file), dimensions=[75, 75])
                 for key in properties_dict:
                     left_aligned = f"{key:<{18}}"
                     temp = f'{properties_dict[key]:.3f}'
@@ -511,7 +542,7 @@ class ClipboardImageSaverApp(rumps.App):
                     build_function_properties = factory_copy_to_clip(
                         properties_dict[key])
                     temp_menu_properties.add(rumps.MenuItem(
-                        left_aligned+right_aligned, callback=build_function_properties))
+                        left_aligned + right_aligned, callback=build_function_properties))
             self.history_molecular_properties_item.add(temp_menu_properties)
 
     def update_history_menu(self, sender=None):

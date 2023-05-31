@@ -1,5 +1,5 @@
 # Clipboard-to-SMILES-Converter
-Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify the conversion process between images and SMILES notations for chemical structures. It offers a user-friendly interface, featuring a built-in history for easy reference, batch processing capabilities for efficient conversion of multiple images, continuous clipboard monitoring to automatically convert detected images, and all of this without requiring an internet connection.
+Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify the conversion process between a variety of chemical notations for chemical structures, such as images of molecules, SMILES, SELFIES, RdKit Mols, InChI, CAS numbers and IUPAC names directly in the clipboard of MacOS. It offers a user-friendly interface, featuring a built-in history for easy reference, batch processing capabilities for efficient conversion of multiple images, continuous clipboard monitoring to automatically convert detected moleculare structures to SMILES, and all of this without requiring an internet connection.
 
 ![](paper/Clipboard2SMILES.png)
 ## Installation as App
@@ -9,14 +9,14 @@ Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify th
 2. Unzip the file:
  - Locate the downloaded zip file and double-click on it to unzip its contents.
 3. Execute the app:
- - After unzipping, you will find the “carlos_helper.app” file. Double-click on it to execute the app.
+ - After unzipping, you will find the “Clipboard-to-SMILES-Converter.app” file. Double-click on it to execute the app.
 4. App not authorized popup:
  - When you try to run the app, a macOS popup might appear, indicating that the app is not authorized to run.
 5. Authorize Clipboard-to-SMILES-Converter in Security settings:
  - Open the “System Preferences” by clicking on the Apple menu in the top-left corner of the screen and selecting “System Preferences”.
  - In the System Preferences window, click on “Security & Privacy”.
  - In the Security & Privacy settings, scroll down.
- - Allow to open carlos_helper.
+ - Allow to open clipboard2smiles.app.
 6. (Optional) Change keyboard shortcut for screenshots:
  - Still, in the System Preferences window, click on “Keyboard”.
  - In the Keyboard settings, select the “Shortcuts” tab.
@@ -67,9 +67,9 @@ python - <<'EOF'
 from huggingface_hub import hf_hub_download
 import shutil
 
-output_folder_path = hf_hub_download('yujieq/MolScribe', 'swin_base_char_aux_1m.pth')
-
-shutil.copytree(output_folder_path, './')
+output_ckp_path = hf_hub_download('yujieq/MolScribe', 'swin_base_char_aux_1m.pth')
+output_folder_path = '/'.join(output_ckp_path.split('/')[:-3])
+shutil.copytree(output_folder_path, './models--yujieq--MolScribe')
 EOF
 ```
 

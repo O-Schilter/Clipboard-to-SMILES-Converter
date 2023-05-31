@@ -4,20 +4,14 @@ import rumps
 import chemdraw
 from datetime import datetime
 
+
 import selfies as sf
 from rdkit import Chem
-from rxn.chemutils.utils import remove_atom_mapping
-from rxn.chemutils.reaction_equation import ReactionEquation
-from rxn.reaction_preprocessing.reaction_standardizer import ReactionStandardizer
-from rxn.chemutils.smiles_augmenter import SmilesAugmenter
-from rxn.chemutils.smiles_randomization import randomize_smiles_restricted
-from rxn.chemutils.miscellaneous import canonicalize_any
+from smiles_operations import augemnt_smiles, canonicalize_smiles, remove_atom_mapping
 
 from utils import create_filename_from_smiles
-from api_conversions import smiles_to_cas_api, smiles_to_iupac_api,  iupac_to_smiles_api, cas_to_smiles_api
+from api_conversions import smiles_to_cas_api, smiles_to_iupac_api, iupac_to_smiles_api, cas_to_smiles_api
 from vendors import Vendors, Enamine, ChemieBrunschwieg
-
-
 
 
 class Converter():
@@ -186,22 +180,19 @@ class Converter():
             return False
 
     def smiles_canonicalize(self, smiles):
-        try:
-            return canonicalize_any(smiles)
-        except:
-            return False
+        # try:
+        return canonicalize_smiles(smiles)
+        # except:
+        #     return False
 
     def smiles_standardize(self, smiles):
         try:
-            reaction = ReactionEquation.from_string(smiles)
-            return ReactionStandardizer()(reaction).to_string()
+            return smiles
         except:
             return False
 
     def smiles_augment(self, smiles):
         try:
-            augmenter = SmilesAugmenter(
-                randomize_smiles_restricted, shuffle=True)
-            return augmenter.augment(smiles, 1)[0]
+            return augemnt_smiles(smiles)
         except:
             return False

@@ -1,11 +1,10 @@
-
 import requests
 import json
 import re
 
 
 class Vendor():
-    def __init__(self, name, url):
+    def __init__(self, name: str, url: str):
         self.name = name
         self.url = url
 
