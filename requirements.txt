@@ -2,3 +2,8 @@ MolScribe==1.1.1
 pyperclip>=1.8.2
 rumps==0.4.0
 chemdraw==0.0.5
+chardet==5.1.0
+certifi==2023.5.7
+selfies==2.1.1
+rxn-chem-utils==1.1.4
+rxn-reaction-preprocessing==2.0.3
