@@ -272,7 +272,7 @@ class ClipboardImageSaverApp(rumps.App):
             if output:
                 if output_format in ['remove_atom_mapping', 'canonicalize', 'standardize', 'augment']:
                     pyperclip.copy(output)
-                    rumps.notification(f"✅ {output_format.capitalize().replace('_', ' ')} copied to clipboard for ",
+                    rumps.notification(f"✅ {output_format.capitalize().replace('_', ' ')} copied to Clipboard for ",
                                        f"{clipboard_input['content']}",
                                        str(output), action_button=' ')
 
@@ -293,7 +293,7 @@ class ClipboardImageSaverApp(rumps.App):
                         self.last_clipboard_cache = output
 
                     self.smiles_to_history(smiles)
-                    rumps.notification(f"✅ {output_format.capitalize()} copied to clipboard for ",
+                    rumps.notification(f"✅ {output_format.capitalize()} copied to Clipboard for ",
                                        f"{clipboard_input['format'].capitalize()} : {clipboard_input['content']}",
                                        str(output), action_button=' ')
 
@@ -428,7 +428,7 @@ class ClipboardImageSaverApp(rumps.App):
                         input, 'smiles', output_format)
                     if output:
                         pyperclip.copy(output)
-                        rumps.notification(f"✅ {output_format.capitalize()} copied to clipboard",
+                        rumps.notification(f"✅ {output_format.capitalize()} copied to Clipboard",
                                            f"",
                                            str(output))
                     else:
@@ -436,13 +436,13 @@ class ClipboardImageSaverApp(rumps.App):
                             input), sound=False)
                 elif output_format == 'smiles':
                     pyperclip.copy(input)
-                    rumps.notification(f"✅ {output_format.capitalize()} copied to clipboard",
+                    rumps.notification(f"✅ {output_format.capitalize()} copied to Clipboard",
                                        f"",
                                        str(input))
                 elif output_format == 'image':
                     self.copy_image_to_clipboard(image_path=input)
                     rumps.notification(
-                        "✅ Image copied to clipboard", '', f'{input}')
+                        "✅ Image copied to Clipboard", '', f'{input}')
 
                 elif output_format == 'price':
                     pyperclip.copy(input)

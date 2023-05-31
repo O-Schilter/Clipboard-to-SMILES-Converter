@@ -6,7 +6,7 @@ import pubchempy as pcp
 def structure_converter(structure, output_format, input_format):
     url = f"https://cactus.nci.nih.gov/chemical/structure/{structure}/{output_format}"
     try:
-        response = requests.get(url, verify=False)
+        response = requests.get(url)
         response.raise_for_status()
         result = response.text.split('\n')
         return result[0]
