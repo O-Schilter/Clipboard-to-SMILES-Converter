@@ -7,7 +7,7 @@ import subprocess
 import rumps
 import torch
 import pyperclip
-
+import requests
 from functools import partial
 from pathlib import Path
 from datetime import datetime
@@ -133,13 +133,28 @@ class ClipboardImageSaverApp(rumps.App):
         self.options_button = rumps.MenuItem(title='Options')
 
         # Select Vendor Menu
-        temp_option_menu = rumps.MenuItem(title='Select Vendor')
-        temp_option_menu.add(rumps.MenuItem(
+
+        # Select Vendor Menu
+        temp_slect_vendor_menu = rumps.MenuItem(title='Select Vendor')
+        temp_slect_vendor_menu.add(rumps.MenuItem(
             title='Enamine', callback=self.select_vendor))
-        temp_option_menu.add(rumps.MenuItem(
+        temp_slect_vendor_menu.add(rumps.MenuItem(
             title='Chemie Brunschwieg', callback=self.select_vendor))
-        temp_option_menu['Enamine'].state = 1
-        self.options_button.add(temp_option_menu)
+        temp_slect_vendor_menu['Enamine'].state = 1
+
+        # Credits
+        share_message = 'I Just discovered an amazing app that lets you convert images to SMILES and other chemical identifiers directly in the clipboard 🤯. Say goodbye to manual drawing molecules and hello to seamless chemistry workflows. Check it out now https://github.com/O-Schilter/Clipboard-to-SMILES-Converter Credits to @OSchilter'
+        encoded_share_message = requests.utils.quote(share_message, safe='')
+
+        share_button = rumps.MenuItem(title='Share the App', callback=lambda x: os.system(
+            "open \"\" " + f"https://twitter.com/intent/tweet?text={encoded_share_message}"))
+        credits_button = rumps.MenuItem(title='Credits & Updates', callback=lambda x: os.system(
+            "open \"\" " + "https://github.com/O-Schilter/Clipboard-to-SMILES-Converter"))
+
+        self.options_button.add(temp_slect_vendor_menu)
+        self.options_button.add(share_button)
+        self.options_button.add(credits_button)
+
 
         # Image cache, to only run conversion when a new Image is detected
         self.last_image_cache = None
