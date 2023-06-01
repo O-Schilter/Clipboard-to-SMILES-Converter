@@ -3,14 +3,16 @@ Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify th
 
 It automatically detects the format used to represent the molecule in the clipboard and converts it with a click of a button to the desired format.
 
- It offers a user-friendly interface, featuring a built-in history for easy reference, batch processing capabilities for efficient conversion of multiple images, continuous clipboard monitoring to automatically convert detected molecular structures to SMILES, and most of this without requiring an internet connection. Additionally, it can be used to find the molecule on chemical vendors directly.
+It offers a user-friendly interface, featuring a built-in history for easy reference, batch processing capabilities for efficient conversion of multiple images, continuous clipboard monitoring to automatically convert detected molecular structures to SMILES, and most of this without requiring an internet connection. Additionally, it can be used to find the molecule on chemical vendors directly.
+
+No need for compiling the App yourself, direcytly download it under the following [link](https://ibm.box.com/v/clipboard2smiles)
 
 ![](paper/Clipboard2SMILES.png)
 
 ## Installation as App
 
 1. Download the zip file:
- - Visit the provided Box link and download the zip file containing Clipboard-to-SMILES-Converter.
+ - Visit the provided [Box link](https://ibm.box.com/v/clipboard2smiles) and download the zip file containing Clipboard-to-SMILES-Converter.
 2. Unzip the file:
  - Locate the downloaded zip file and double-click on it to unzip its contents.
 3. Execute the app:
@@ -99,7 +101,6 @@ You may need to change the iconfile paramters in the setup.py file. If you are c
 
 ## Functionality Overview
 A brief list of what each menu item is doing:
-
 
 - Convert Clipboard Image to Format: Detects the format of the clipboard automatically, and saves the desired format directly back to the clipboard. For example, if a screenshot of a molecule is in the clipboard it automatically can be converted into a SMILES. Additionally, it saves the molecule directly into the history.
 - Clipboard SMILES operation: you can either Canonicalize, Augment or Remove the Atom Mapping of the SMILES in the clipboard is saved back into the clipboard.
