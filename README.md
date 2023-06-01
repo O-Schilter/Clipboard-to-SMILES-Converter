@@ -113,3 +113,4 @@ A brief list of what each menu item is doing:
 - Add images to queue: opens queue folder. In this folder the user can manually drag and drop, images to he/she/they would like to convert.
 - Process image queue: starts converting all images in the queue folder.
 - Options: Select the chemical vendor, share the App on Twitter, or open the GitHub page of the project.
+
