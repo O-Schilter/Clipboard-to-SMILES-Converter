@@ -1,7 +1,12 @@
 # Clipboard-to-SMILES-Converter
-Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify the conversion process between images and SMILES notations for chemical structures. It offers a user-friendly interface, featuring a built-in history for easy reference, batch processing capabilities for efficient conversion of multiple images, continuous clipboard monitoring to automatically convert detected images, and all of this without requiring an internet connection.
+Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify the conversion process between a variety of chemical notations for chemical structures, such as Images of Molecules, SMILES, SELFIES, RdKit Mols, InChI, CAS numbers, and IUPAC directly in the clipboard.
+
+It automatically detects the format used to represent the molecule in the clipboard and converts it with a click of a button to the desired format.
+
+ It offers a user-friendly interface, featuring a built-in history for easy reference, batch processing capabilities for efficient conversion of multiple images, continuous clipboard monitoring to automatically convert detected molecular structures to SMILES, and most of this without requiring an internet connection. Additionally, it can be used to find the molecule on chemical vendors directly.
 
 ![](paper/Clipboard2SMILES.png)
+
 ## Installation as App
 
 1. Download the zip file:
@@ -9,14 +14,14 @@ Clipboard-to-SMILES-Converter is a lightweight macOS app designed to simplify th
 2. Unzip the file:
  - Locate the downloaded zip file and double-click on it to unzip its contents.
 3. Execute the app:
- - After unzipping, you will find the “carlos_helper.app” file. Double-click on it to execute the app.
+ - After unzipping, you will find the “Clipboard-to-SMILES-Converter.app” file. Double-click on it to execute the app.
 4. App not authorized popup:
  - When you try to run the app, a macOS popup might appear, indicating that the app is not authorized to run.
 5. Authorize Clipboard-to-SMILES-Converter in Security settings:
  - Open the “System Preferences” by clicking on the Apple menu in the top-left corner of the screen and selecting “System Preferences”.
  - In the System Preferences window, click on “Security & Privacy”.
  - In the Security & Privacy settings, scroll down.
- - Allow to open carlos_helper.
+ - Allow to open clipboard2smiles.app.
 6. (Optional) Change keyboard shortcut for screenshots:
  - Still, in the System Preferences window, click on “Keyboard”.
  - In the Keyboard settings, select the “Shortcuts” tab.
@@ -94,13 +99,18 @@ You may need to change the iconfile paramters in the setup.py file. If you are c
 
 ## Functionality Overview
 A brief list of what each menu item is doing:
-- Convert Clipboard Image to SMILES: Try to convert the image provided in the clipboard to SMILES. If their clipboard content is not a SMILES returns a notification with the current content of the clipboard, if it is an image it will save back the extracted molecular structure in the form of SMILES into the clipboard.
-- Convert Clipboard SMILES to Image: If a valid SMILES is provided in the clipboard, the corresponding molecular structure is drawn and the image is directly saved back into the clipboard.
-- Canonicalize Clipboard SMILES: If a valid SMILES is provided in the clipboard, the canonicalized form of the SMILES is saved back into the clipboard.
-- Watch Clipboard for Molecules: The same functionality as "Convert Clipboard Image to SMILES" but done continuously without user input. Every image saved to the clipboard will be automatically scanned for a molecular structure, if one is detected with a high certainty the corresponding SMILES is saved back into the clipboard. If pressed the menu item changes into a stop button.
-- Open History File: All converted SMILES are saved into History File with their corresponding timestamp.
-- Copy SMILES from History: The ten most recent SMILES are displayed, when clicked on one the SMILES is saved into the clipboard.
-- Copy Image from History: The ten most recent SMILES are displayed, when clicked on one the image of the molecule is saved into the clipboard.
+
+
+- Convert Clipboard Image to Format: Detects the format of the clipboard automatically, and saves the desired format directly back to the clipboard. For example, if a screenshot of a molecule is in the clipboard it automatically can be converted into a SMILES. Additionally, it saves the molecule directly into the history.
+- Clipboard SMILES operation: you can either Canonicalize, Augment or Remove the Atom Mapping of the SMILES in the clipboard is saved back into the clipboard.
+- Clipboard to price: Converters clipboard content to CAS and checks the if is available from a chemical vendor. The vendor is selected in the options. 
+- Watch Clipboard for Molecules: The same functionality as "Convert Clipboard to SMILES" but done continuously without user input. Every change in clipboard content will be automatically scanned for a molecular structure, if one is detected the corresponding SMILES is saved back into the clipboard. If pressed the menu item changes into a stop button.
+- Open History File: All converted SMILES are saved into History File with their corresponding timestamp. If a SMILES is already in the History, the older entry will be removed. 
+- Copy SMILES from History: The ten most recent SMILES are displayed, when clicked on one the SMILES are saved into the clipboard.
+- Copy Structure from History: The ten most recent SMILES are displayed, allowing you to select the desired molecular representation and save it to the clipboard.
+- Molecular properties from History: The ten most recent SMILES are displayed, allowing you to select the desired molecular properties and save them to the clipboard.
 - Start Clipboard monitoring: All images taken in the clipboard are saved into a queue folder. As soon as the user stops the clipboard monitoring, all images in the queue folder will be converted into SMILES. The main difference between "Watch Clipboard for Molecules" is that the conversion is done in batches and afterward. 
 - Add images to queue: opens queue folder. In this folder the user can manually drag and drop, images to he/she/they would like to convert.
 - Process image queue: starts converting all images in the queue folder.
+- Options: Select the chemical vendor, share the App on Twitter, or open the GitHub page of the project.
+
