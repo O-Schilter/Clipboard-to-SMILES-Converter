@@ -43,22 +43,25 @@ class ChemieBrunschwieg(Vendor):
                 price = product['Preis']
 
                 if product_cas_number == cas_number and pack_size and price:
+                    print(pack_size)
+                    
                     amount = self.extract_amount(pack_size)
-                    price_per_amount = price / amount
+                    if amount > 0:
+                        price_per_amount = price / amount
 
-                    if price_per_amount < lowest_price_per_amount:
-                        lowest_price_per_amount = price_per_amount
-                    # if lead_time < lowest_lead_time or (lead_time == lowest_lead_time and price_per_amount < lowest_price_per_amount):
-                    #     lowest_lead_time = lead_time
-                    #     fastest_product = product
+                        if price_per_amount < lowest_price_per_amount:
+                            lowest_price_per_amount = price_per_amount
+                        # if lead_time < lowest_lead_time or (lead_time == lowest_lead_time and price_per_amount < lowest_price_per_amount):
+                        #     lowest_lead_time = lead_time
+                        #     fastest_product = product
 
-                        cheapest_product = {
-                            "item_name": product['ItemName'],
-                            "price": product['Preis'],
-                            "price_per": price_per_amount,
-                            "amount": product['Packsize'],
-                            "link": 'https://www.chemie-brunschwig.ch/shop/?term='+product['ItemCode']
-                        }
+                            cheapest_product = {
+                                "item_name": product['ItemName'],
+                                "price": product['Preis'],
+                                "price_per": price_per_amount,
+                                "amount": product['Packsize'],
+                                "link": 'https://www.chemie-brunschwig.ch/shop/?term='+product['ItemCode']
+                            }
             return cheapest_product
 
         except requests.exceptions.RequestException as e:
@@ -74,11 +77,10 @@ class ChemieBrunschwieg(Vendor):
             'ml': 1,
             'l': 1000
         }
-
         regex = r'(\d+(?:\.\d+)?)\s*(?:x\s*)?(\d+(?:\.\d+)?)?\s*([a-zA-Z]+)\s*'
-        matches = re.findall(regex, pack_size)
+        matches = re.findall(regex, pack_size.lower().replace(',','.'))
         grams = 0
-
+        print(matches)
         if matches:
             for match in matches:
                 quantity = float(match[0])
@@ -176,7 +178,6 @@ class Vendors():
 
 
 if __name__ == '__main__':
-
     vend = Vendors([Enamine(), ChemieBrunschwieg()])
     vend.select_vendor('ChemieBrunschwieg')
     print(vend.cas_to_price('64-17-5'))
