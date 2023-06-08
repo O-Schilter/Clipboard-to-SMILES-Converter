@@ -7,7 +7,7 @@ It offers a user-friendly interface, featuring a built-in history for easy refer
 
 No need for compiling the App yourself, direcytly download it under the following [link](https://ibm.box.com/v/clipboard2smiles)
 
-![](paper/Clipboard2SMILES.png)
+![](paper/Clipboard2SMILES.png | width=65)
 
 ## Installation as App
 
