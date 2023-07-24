@@ -115,3 +115,11 @@ A brief list of what each menu item is doing:
 - Process image queue: starts converting all images in the queue folder.
 - Options: Select the chemical vendor, share the App on Twitter, or open the GitHub page of the project.
 
+## Cite
+```@article{schilter2023cmd,
+  title = {{CMD + V for Chemistry: Image to chemical structure conversion directly done in the clipboard}},
+  author = {Schilter, Oliver and Schwaller, Philippe and Laino, Teodoro},
+  journal = {Applied AI Letters},
+  year = {2023},
+  note = {Under review},
+}```
