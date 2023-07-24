@@ -119,7 +119,7 @@ A brief list of what each menu item is doing:
 ```
 @article{schilter2023cmd,
   title = {{CMD + V for Chemistry: Image to chemical structure conversion directly done in the clipboard}},
-  author = {Schilter, Oliver and Schwaller, Philippe and Laino, Teodoro},
+  author = {Schilter, Oliver and Laino, Teodoro and Schwaller, Philippe},
   journal = {Applied AI Letters},
   year = {2023},
   note = {Under review},
