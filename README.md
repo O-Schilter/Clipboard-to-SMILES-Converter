@@ -117,11 +117,11 @@ A brief list of what each menu item is doing:
 
 ## Cite
 ```
-@article{schilter2023cmd,
-  title = {{CMD + V for Chemistry: Image to chemical structure conversion directly done in the clipboard}},
+@article{schiltercmd+,
+  title = {CMD+ V for chemistry: Image to chemical structure conversion directly done in the clipboard},
   author = {Schilter, Oliver and Laino, Teodoro and Schwaller, Philippe},
   journal = {Applied AI Letters},
-  year = {2023},
-  note = {Under review},
+  pages = {e91},
+  publisher = {Wiley Online Library}
 }
 ```
