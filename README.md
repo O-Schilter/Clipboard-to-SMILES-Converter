@@ -14,26 +14,28 @@ No need for compiling the App yourself, direcytly download it under the followin
 1. Download the zip file:
  - Visit the provided [Box link](https://ibm.box.com/v/clipboard2smiles) and download the zip file containing Clipboard-to-SMILES-Converter.
 2. Unzip the file:
- - Locate the downloaded zip file and double-click on it to unzip its contents.
-3. Execute the app:
+ - Locate the downloaded zip file and double-click on it to unzip its contents
+3. Move the .app File:
+ -  Move the Clipboard-to-SMILES-Converter from the downloads folder to the application folder.
+4. Execute the app:
  - After unzipping, you will find the “Clipboard-to-SMILES-Converter.app” file. Double-click on it to execute the app.
-4. App not authorized popup:
+5. App not authorized popup:
  - When you try to run the app, a macOS popup might appear, indicating that the app is not authorized to run.
-5. Authorize Clipboard-to-SMILES-Converter in Security settings:
+6. Authorize Clipboard-to-SMILES-Converter in Security settings:
  - Open the “System Preferences” by clicking on the Apple menu in the top-left corner of the screen and selecting “System Preferences”.
  - In the System Preferences window, click on “Security & Privacy”.
  - In the Security & Privacy settings, scroll down.
  - Allow to open clipboard2smiles.app.
-6. (Optional) Change keyboard shortcut for screenshots:
+7. (Optional) Change keyboard shortcut for screenshots:
  - Still, in the System Preferences window, click on “Keyboard”.
  - In the Keyboard settings, select the “Shortcuts” tab.
  - In the left sidebar, choose “Screen Shots” from the list.
  - Click on the existing keyboard shortcut for “Copy screenshot of a selected area to clipboard“ and assign a new shortcut, such as “Cmd + 4”, which will be more convenient since Clipboard-to-SMILES-Converter uses the default “Cmd + Shift +Option+ 4" shortcut for image conversion.
-7. Relaunch Clipboard-to-SMILES-Converter:
+8. Relaunch Clipboard-to-SMILES-Converter:
  - Close the Security & Privacy and Keyboard settings.
  - Quit Clipboard-to-SMILES-Converter if it’s running.
  - Launch Clipboard-to-SMILES-Converter again to ensure that the changes and authorizations have taken effect, the startup can take up to a minute since it loads the model. (maybe a second restart is required) 
-8. (Optional but recommended) Allow notifications:
+9. (Optional but recommended) Allow notifications:
  - When Clipboard-to-SMILES-Converter launches, you may be prompted to allow notifications. It is recommended to enable notifications since it is the main way the app communicates about the status of the conversion and other information from the app.
 
 
