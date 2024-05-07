@@ -1,6 +1,6 @@
 import os
 import torch
-import rumps
+# import rumps
 import chemdraw
 from datetime import datetime
 
@@ -74,7 +74,7 @@ class Converter():
         if image_or_path == 'image':
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             file_name = f'{timestamp}_clipboard_image.png'
-            file_path = self.image_input_dir / file_name
+            file_path = os.path.join(self.image_input_dir, file_name)
             image.save(file_path, "PNG")
         else:
             file_path = image
@@ -88,8 +88,9 @@ class Converter():
         if confidence > self.image_confidence_level:
             return smiles
         else:
-            rumps.notification(
-                '🔁 Confidence lower than: '+str(self.image_confidence_level), 'Retake screenshot', f"Proposed SMILES: {smiles}", sound=False, icon='pictograms/carlos_helper_bad.png')
+            # rumps.notification(
+            #     f'🔁 Confidence lower than: {self.image_confidence_level} ({confidence:.2f})',
+            #     'Retake screenshot', f"Proposed SMILES: {smiles}", sound=False, icon='pictograms/carlos_helper_bad.png')
             return False
 
     def smiles_to_smiles(self, smiles):
@@ -138,7 +139,7 @@ class Converter():
     def smiles_to_image(self, smiles):
         file_name, timestamp = create_filename_from_smiles(smiles)
         drawer = chemdraw.Drawer(smiles)
-        image_path = self.image_generated_dir / file_name
+        image_path = os.path.join(self.image_generated_dir,file_name)
         drawer.draw_img(image_path)
         return image_path
 
