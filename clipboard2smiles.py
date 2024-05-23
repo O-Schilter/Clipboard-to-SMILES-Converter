@@ -376,7 +376,7 @@ class ClipboardImageSaverApp(rumps.App):
     def save_image_from_clipboard(self, state):
         image = self.get_image_from_clipboard(state)
         if image:
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
             file_name = f'{timestamp}_clipboard_image.png'
             file_path = self.image_input_dir / file_name
             image.save(file_path, "PNG")
