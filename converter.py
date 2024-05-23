@@ -72,7 +72,7 @@ class Converter():
 
     def image_to_smiles(self, image, image_or_path='image'):
         if image_or_path == 'image':
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
             file_name = f'{timestamp}_clipboard_image.png'
             file_path = self.image_input_dir / file_name
             image.save(file_path, "PNG")
