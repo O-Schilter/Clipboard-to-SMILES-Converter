@@ -880,10 +880,17 @@ class ClipboardImageSaverApp(QMainWindow):
 
     # Rest of the code stays the same
     def open_history_file(self):
-        os.system(f"open {self.csv_file_path}")
+        if os.name == 'nt':  # Windows
+            subprocess.run(['start', self.csv_file_path], shell=True)
+        else: 
+            subprocess.run(['open', self.csv_file_path])
 
     def open_queue_folder(self):
-        os.system(f"open {self.image_input_dir}")
+        if os.name == 'nt':  # Windows
+            subprocess.run(['explorer', self.image_input_dir], shell=True)
+        else: 
+            print('basdasd')
+            subprocess.run(['open', self.image_input_dir])
 
     # def start_clipboard_image_queue_timer(self):
     #     self.clipboard_to_image_queue_action.setText("Stop Clipboard Monitoring")
@@ -919,8 +926,6 @@ class ClipboardImageSaverApp(QMainWindow):
     #     self.clipboard_to_image_queue_timer.stop()
     #     self.batch_images_to_smiles()
 
-    def open_queue_folder(self):
-        os.system(f"open {self.image_input_dir}")
 
     def batch_images_to_smiles(self):
         for filename in os.listdir(self.image_input_dir):
