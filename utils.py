@@ -3,7 +3,7 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors
 
 def create_filename_from_smiles(smiles):
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
     smiles_for_filename = "".join(x for x in smiles if x.isalnum())
     new_filename = f'{timestamp}_{smiles_for_filename}.png'
     return new_filename, timestamp
