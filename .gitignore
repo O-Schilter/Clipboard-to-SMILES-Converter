@@ -5,7 +5,10 @@ __pycache__/
 
 # C extensions
 *.so
-
+.conda/*
+.molscribe/*
+molscribe
+models--yujieq--MolScribe
 # Distribution / packaging
 .Python
 build/

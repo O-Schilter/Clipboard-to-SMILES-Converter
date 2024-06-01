@@ -21,7 +21,7 @@ class Converter():
         self.image_generated_dir = image_generated_dir
         self.image_confidence_level = 0.66
 
-        self.vendors = Vendors([Enamine(), ChemieBrunschwieg()])
+        self.vendors = Vendors([ChemieBrunschwieg(), Enamine()])
 
         self.conversion_to_smiles = {
             'cas': self.cas_to_smiles,
@@ -53,6 +53,7 @@ class Converter():
             output = self.conversion_from_smiles[output_format](smiles)
         else:
             output = False
+        print(output, smiles)
         return output, smiles
 
     # to SMILES conversions
@@ -146,7 +147,10 @@ class Converter():
     def smiles_to_price(self, smiles):
         cas = self.smiles_to_cas(smiles)
         if cas:
+            print('cas for price conversion found')
             price_dict = self.vendors.cas_to_price(cas)
+            print('price_dict',price_dict)
+
             return price_dict
 
     def smiles_to_selfies(self, smiles):
