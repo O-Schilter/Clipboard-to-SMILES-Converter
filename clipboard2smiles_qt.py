@@ -104,27 +104,25 @@ class ClipboardImageSaverApp(QMainWindow):
         # Setup system tray icon
         self.tray_icon = QSystemTrayIcon(self)
         if darkdetect.isDark():
-            self.pictogram_folder = os.path.join(basedir, "pictograms","light")
-            print(self.pictogram_folder)
+            self.pictogram_folder = os.path.join(basedir, "pictograms", "dark")
         else:
-           self.pictogram_folder = os.path.join(basedir, "pictograms","dark")
-           print(self.pictogram_folder)
-
+            self.pictogram_folder = os.path.join(basedir, "pictograms", "light")
+            
         self.tray_icon.Information = QIcon(
             os.path.join(self.pictogram_folder, "carlos_helper_logo.png")
         )
         self.tray_icon.Warning = QIcon(
-            os.path.join( self.pictogram_folder, "carlos_helper_bad.png")
+            os.path.join(self.pictogram_folder, "carlos_helper_bad.png")
         )
         self.tray_icon.Critical = QIcon(
-            os.path.join( self.pictogram_folder, "carlos_helper_bad.png")
+            os.path.join(self.pictogram_folder, "carlos_helper_bad.png")
         )
 
         self.normal_status_icon = QIcon(
-            os.path.join( self.pictogram_folder, "carlos_helper_logo.png")
+            os.path.join(self.pictogram_folder, "carlos_helper_logo.png")
         )
         self.recording_status_icon = QIcon(
-            os.path.join( self.pictogram_folder, "carlos_helper_recording.png")
+            os.path.join(self.pictogram_folder, "carlos_helper_recording.png")
         )
 
         self.tray_icon.setIcon(
@@ -254,10 +252,6 @@ class ClipboardImageSaverApp(QMainWindow):
         )
         self.description_queue_action.setEnabled(False)
         self.menu.addAction(self.description_queue_action)
-
-        # self.description_image_queue_menu = QMenu(
-        #     "Monitor Clipboard to Build Image Queue", self
-        # )
         self.menu.addAction(self.description_queue_action)
 
         self.clipboard_to_image_queue_action = QAction(
@@ -394,10 +388,9 @@ class ClipboardImageSaverApp(QMainWindow):
                             output=output
                         ),
                         self.tray_icon.Information,
-                            10000,
+                        10000,
                     )
-                    self.tray_icon.messageClicked.connect(self.open_url(output['link']))
-
+                    self.tray_icon.messageClicked.connect(self.open_url(output["link"]))
 
                 else:
                     pyperclip.copy(input_format)
@@ -436,7 +429,9 @@ class ClipboardImageSaverApp(QMainWindow):
                 )
                 temp_menu_structure = QMenu(self)
                 temp_menu_structure.setIcon(
-                    QIcon(str(Path(os.path.join(self.image_generated_dir, hist_img_file))))
+                    QIcon(
+                        str(Path(os.path.join(self.image_generated_dir, hist_img_file)))
+                    )
                 )
                 temp_menu_structure.addAction(
                     QAction("Image", self, triggered=build_function_image)
@@ -551,7 +546,7 @@ class ClipboardImageSaverApp(QMainWindow):
 
     def open_url(self, url):
         if os.name == "nt":  # Windows
-            os.system(f'start {url}')
+            os.system(f"start {url}")
         elif os.name == "posix":
             os.system(f'open "{url}"')
 
@@ -652,7 +647,7 @@ class ClipboardImageSaverApp(QMainWindow):
 
     def update_history_menu(self, sender=None):
         # Update the history menu with the last 10 SMILES strings
-        self.read_history() 
+        self.read_history()
         self.show_history()
 
     def clipboard_content_identification(self):
@@ -726,8 +721,6 @@ class ClipboardImageSaverApp(QMainWindow):
                 return {"format": "iupac", "content": clip}
 
     def clipboard_to(self, output_format):
-        print(type(output_format))
-        print(output_format)
         clipboard_input = self.clipboard_content_identification()
 
         # Only do the check if the last clipboard was the same as previous if the called by a Timer
@@ -743,15 +736,6 @@ class ClipboardImageSaverApp(QMainWindow):
             output, smiles = self.converter.convert(
                 clipboard_input["content"], clipboard_input["format"], output_format
             )
-            print('happensss')
-            print('output',output)
-            print(
-                "output_format",
-                output_format,
-                "clipboard_input['format']",
-                clipboard_input["format"],
-                clipboard_input["content"],
-            )
 
             if output:
                 if output_format in [
@@ -766,23 +750,20 @@ class ClipboardImageSaverApp(QMainWindow):
                         f"✅ {output_format.capitalize()} copied to Clipboard for ",
                         f"{clipboard_input['content']}\n{output}",
                         self.tray_icon.Information,
-                        5000)
-                    
+                        5000,
+                    )
 
                 elif output_format == "price":
-                    print('output',output)
-                
                     self.tray_icon.showMessage(
                         f"💰 Buy {output['item_name']}".format(output=output),
                         f"{output['amount']} for {output['price']} CHF\nor {output['price_per']:.2f} CHF/g".format(
                             output=output
                         ),
-                     self.tray_icon.Information,
+                        self.tray_icon.Information,
                         10000,
                     )
 
-                    self.tray_icon.messageClicked.connect(self.open_url(output['link']))
-
+                    self.tray_icon.messageClicked.connect(self.open_url(output["link"]))
 
                 else:
                     if output_format == "image":
@@ -812,52 +793,16 @@ class ClipboardImageSaverApp(QMainWindow):
 
     # Rest of the code stays the same
     def open_history_file(self):
-        if os.name == 'nt':  # Windows
-            subprocess.run(['start', self.csv_file_path], shell=True)
-        else: 
-            subprocess.run(['open', self.csv_file_path])
+        if os.name == "nt":  # Windows
+            subprocess.run(["start", self.csv_file_path], shell=True)
+        else:
+            subprocess.run(["open", self.csv_file_path])
 
     def open_queue_folder(self):
-        if os.name == 'nt':  # Windows
-            subprocess.run(['explorer', self.image_input_dir], shell=True)
-        else: 
-            print('basdasd')
-            subprocess.run(['open', self.image_input_dir])
-
-    # def start_clipboard_image_queue_timer(self):
-    #     self.clipboard_to_image_queue_action.setText("Stop Clipboard Monitoring")
-    #     self.clipboard_to_image_queue_action.triggered.disconnect()
-    #     self.clipboard_to_image_queue_action.triggered.connect(
-    #         self.stop_clipboard_image_queue_timer
-    #     )
-
-    #     self.clipboard_to_image_queue_timer = QTimer(self)
-    #     self.clipboard_to_image_queue_timer.timeout.connect(
-    #         self.save_image_from_clipboard
-    #     )
-    #     self.clipboard_to_image_queue_timer.start(1000)
-
-    #     message_box = QMessageBox(self)
-    #     message_box.setWindowTitle("Image Collector")
-    #     message_box.setText("Collecting images...")
-    #     message_box.setInformativeText("Press 'Stop' to stop collecting images")
-    #     message_box.setIconPixmap(QPixmap("pictograms/carlos_helper_logo.png"))
-    #     message_box.addButton(QMessageBox.Ok)
-    #     stop_button = message_box.addButton("Stop", QMessageBox.ActionRole)
-    #     message_box.exec_()
-
-    #     if message_box.clickedButton() == stop_button:
-    #         self.stop_clipboard_image_queue_timer()
-
-    # def stop_clipboard_image_queue_timer(self):
-    #     self.clipboard_to_image_queue_action.setText("Start Clipboard Monitoring")
-    #     self.clipboard_to_image_queue_action.triggered.disconnect()
-    #     self.clipboard_to_image_queue_action.triggered.connect(
-    #         self.start_clipboard_image_queue_timer
-    #     )
-    #     self.clipboard_to_image_queue_timer.stop()
-    #     self.batch_images_to_smiles()
-
+        if os.name == "nt":  # Windows
+            subprocess.run(["explorer", self.image_input_dir], shell=True)
+        else:
+            subprocess.run(["open", self.image_input_dir])
 
     def batch_images_to_smiles(self):
         for filename in os.listdir(self.image_input_dir):

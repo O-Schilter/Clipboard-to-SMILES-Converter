@@ -3,64 +3,68 @@ import json
 import re
 
 
-class Vendor():
+class Vendor:
     def __init__(self, name: str, url: str):
         self.name = name
         self.url = url
 
 
 class ChemieBrunschwieg(Vendor):
-    def __init__(self, name='ChemieBrunschwieg', url='https://www.chemie-brunschwig.ch/actions/sapShop/products/get-products'):
+    def __init__(
+        self,
+        name="ChemieBrunschwieg",
+        url="https://www.chemie-brunschwig.ch/actions/sapShop/products/get-products",
+    ):
         super().__init__(name, url)
 
     def cas_to_price(self, cas_number):
-        print('finding price for:', cas_number)
+        print("finding price for:", cas_number)
         headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json, text/plain, */*',
-            'X-Requested-With': 'XMLHttpRequest',
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/plain, */*",
+            "X-Requested-With": "XMLHttpRequest",
         }
         data = {
             "fulltext": str(cas_number),
-            'brandid': '',
-            'skip': 0,
-            'take': 500,
-            'startWithSearch': True,
-            'useOciSession': False
+            "brandid": "",
+            "skip": 0,
+            "take": 500,
+            "startWithSearch": True,
+            "useOciSession": False,
         }
 
         response = requests.post(
-            self.url, headers=headers, data=json.dumps(data), verify=False)
+            self.url, headers=headers, data=json.dumps(data), verify=False
+        )
         response.raise_for_status()
-        products = response.json()['Items']
+        products = response.json()["Items"]
 
         cheapest_product = None
-        lowest_price_per_amount = float('inf')
+        lowest_price_per_amount = float("inf")
         try:
             for product in products:
-                product_cas_number = product['CAS']
-                pack_size = product['Packsize']
-                price = product['Preis']
+                product_cas_number = product["CAS"]
+                pack_size = product["Packsize"]
+                price = product["Preis"]
 
                 if product_cas_number == cas_number and pack_size and price:
-                    print(pack_size)
-                    
                     amount = self.extract_amount(pack_size)
                     if amount > 0:
                         price_per_amount = price / amount
 
                         if price_per_amount < lowest_price_per_amount:
                             lowest_price_per_amount = price_per_amount
-                        # if lead_time < lowest_lead_time or (lead_time == lowest_lead_time and price_per_amount < lowest_price_per_amount):
-                        #     lowest_lead_time = lead_time
-                        #     fastest_product = product
+                            # if lead_time < lowest_lead_time or (lead_time == lowest_lead_time and price_per_amount < lowest_price_per_amount):
+                            #     lowest_lead_time = lead_time
+                            #     fastest_product = product
 
                             cheapest_product = {
-                                "item_name": product['ItemName'],
-                                "price": product['Preis'],
+                                "item_name": product["ItemName"],
+                                "price": product["Preis"],
                                 "price_per": price_per_amount,
-                                "amount": product['Packsize'],
-                                "link": 'https://www.chemie-brunschwig.ch/shop/?term='+product['ItemCode']
+                                "amount": product["Packsize"],
+                                "link": "https://www.chemie-brunschwig.ch/shop/?term="
+                                + product["ItemCode"],
                             }
             return cheapest_product
 
@@ -69,16 +73,9 @@ class ChemieBrunschwieg(Vendor):
             return None
 
     def extract_amount(self, pack_size):
-        units = {
-            'mg': 0.001,
-            'g': 1,
-            'gr': 1,
-            'kg': 1000,
-            'ml': 1,
-            'l': 1000
-        }
-        regex = r'(\d+(?:\.\d+)?)\s*(?:x\s*)?(\d+(?:\.\d+)?)?\s*([a-zA-Z]+)\s*'
-        matches = re.findall(regex, pack_size.lower().replace(',','.'))
+        units = {"mg": 0.001, "g": 1, "gr": 1, "kg": 1000, "ml": 1, "l": 1000}
+        regex = r"(\d+(?:\.\d+)?)\s*(?:x\s*)?(\d+(?:\.\d+)?)?\s*([a-zA-Z]+)\s*"
+        matches = re.findall(regex, pack_size.lower().replace(",", "."))
         grams = 0
         print(matches)
         if matches:
@@ -95,7 +92,7 @@ class ChemieBrunschwieg(Vendor):
 
 
 class Enamine(Vendor):
-    def __init__(self, name='Enamine', url='https://new.enaminestore.com/api/v1/'):
+    def __init__(self, name="Enamine", url="https://new.enaminestore.com/api/v1/"):
         super().__init__(name, url)
 
     def cas_to_price(self, cas_number):
@@ -148,7 +145,7 @@ class Enamine(Vendor):
                                 "price": price,
                                 "price_per": price_per_gram,
                                 "amount": f"{amount} {unit}",
-                                "link": f"https://new.enaminestore.com/catalog/{code}"
+                                "link": f"https://new.enaminestore.com/catalog/{code}",
                             }
 
                     return cheapest_product
@@ -166,7 +163,7 @@ class Enamine(Vendor):
         return None
 
 
-class Vendors():
+class Vendors:
     def __init__(self, vendors):
         self.vendors = vendors
         self.cas_to_price = self.vendors[0].cas_to_price
@@ -177,8 +174,7 @@ class Vendors():
                 self.cas_to_price = ven.cas_to_price
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     vend = Vendors([Enamine(), ChemieBrunschwieg()])
-    vend.select_vendor('ChemieBrunschwieg')
-    print(vend.cas_to_price('64-17-5'))
-
+    vend.select_vendor("ChemieBrunschwieg")
+    print(vend.cas_to_price("64-17-5"))
