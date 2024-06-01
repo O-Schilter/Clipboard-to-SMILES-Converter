@@ -4,6 +4,8 @@ import PyInstaller.__main__
 PyInstaller.__main__.run([
     'clipboard2smiles_qt.py',
     '--windowed',
+    '--onefile',
+    '--name=Clipboard2Smiles',
     '--icon=pictograms\carlos_helper_logo.png',
     '--add-data=smiles.csv:.',
     '--add-data=pictograms:pictograms',
