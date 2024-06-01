@@ -508,11 +508,9 @@ class ClipboardImageSaverApp(rumps.App):
             if hist_img_file == 'False':
                 self.history_item_smiles.add(rumps.MenuItem(
                     hist_smi, callback=build_function_smiles))
-
                 self.history_item_price.add(rumps.MenuItem(
                     hist_smi, callback=build_function_price, ))
-                temp_menu_structure = rumps.MenuItem(
-                    hist_smi, icon=str(self.image_generated_dir / hist_img_file), dimensions=[75, 75])
+                temp_menu_structure = rumps.MenuItem(hist_smi, dimensions=[75, 75])
             else:
                 build_function_image = factory_structure(
                     '', str(self.image_generated_dir / hist_img_file), 'image')
