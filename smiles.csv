@@ -1,2 +1,25 @@
 smiles, image_file, date
-COc1ccc(CC(=O)O)cc1O,2023-06-01 10:16:16_COc1cccCCOOcc1O.png,2023-06-01 10:16:16
+COC1=CC=C(CC(=O)O)C=C1O,2023-06-01 10:58:46_COC1CCCCCOOCC1O.png,2023-06-01 10:58:46
+COc1ccc(CC(O)=O)cc1O,2023-06-01 10:58:51_COc1cccCCOOcc1O.png,2023-06-01 10:58:51
+COc1ccc(CC(=O)O)cc1O,2023-06-01 10:59:51_COc1cccCCOOcc1O.png,2023-06-01 10:59:51
+O([2H])[2H],2023-06-02 12:57:11_O2H2H.png,2023-06-02 12:57:11
+C(C#N)([2H])([2H])[2H],2023-06-02 14:07:28_CCN2H2H2H.png,2023-06-02 14:07:28
+[H]OC(=O)c1c([H])c([H])c([H])c([H])c1O[H],2023-06-05 17:31:44_HOCOc1cHcHcHcHc1OH.png,2023-06-05 17:31:44
+CC(Br)C1CCCCC1,2023-06-09 10:29:24_CCBrC1CCCCC1.png,2023-06-09 10:29:24
+C[CH]=[C]1CC[CH2]CC1,2023-06-09 10:42:32_CCHC1CCCH2CC1.png,2023-06-09 10:42:32
+BrCCC1CCCCC1,2023-06-09 10:43:32_BrCCC1CCCCC1.png,2023-06-09 10:43:32
+Cc1cccc(C(=O)Cl)c1,2023-06-09 10:54:01_Cc1ccccCOClc1.png,2023-06-09 10:54:01
+CC(=O)Nc1ccc(O)cc1,2023-06-09 11:02:07_CCONc1cccOcc1.png,2023-06-09 11:02:07
+[H][Rh@OH16](C)(P(c1ccccc1)(c1ccccc1)c1ccccc1)(P(c1ccccc1)(c1ccccc1)c1ccccc1)P(c1ccccc1)(c1ccccc1)c1ccccc1,False,False
+[H][Rh@OH24](C)(P=P(c1ccccc1)(c1ccccc1)c1ccccc1)(P(c1ccccc1)(c1ccccc1)c1ccccc1)P(c1ccccc1)(c1ccccc1)c1ccccc1,False,False
+CC(C)(C)Br,2024-05-02 14:26:38_CCCCBr.png,2024-05-02 14:26:38
+CC(=O)CCc1ccc(O)cc1,2024-05-02 14:29:40_CCOCCc1cccOcc1.png,2024-05-02 14:29:40
+C=C(C(=O)O)c1ccc(CC(C)C)cc1,2024-05-02 14:30:11_CCCOOc1cccCCCCcc1.png,2024-05-02 14:30:11
+CC(C)Cc1ccc(cc1)[C@@H](C)C(=O)O,2024-05-02 14:41:58_CCCCc1ccccc1CHCCOO.png,2024-05-02 14:41:58
+COc1ccc(cc1OC2CCCC2)C(=O)Nc3c(Cl)cncc3Cl,2024-05-02 15:59:19_COc1ccccc1OC2CCCC2CONc3cClcncc3Cl.png,2024-05-02 15:59:19
+CC(=O)Oc1ccccc1C(=O)O,2024-05-02 16:15:04_CCOOc1ccccc1COO.png,2024-05-02 16:15:04
+CC(C)Cc1ccc(C(C)C(=O)O)cc1.[HH],2024-05-03 08:58:55_CCCCc1cccCCCOOcc1HH.png,2024-05-03 08:58:55
+CC(C)Cc1ccc(I)cc1,2024-05-03 10:20:42_CCCCc1cccIcc1.png,2024-05-03 10:20:42
+CC(C)CC1=CC=C(C=C1)C(C)C(O)=O,2024-05-03 15:00:01_CCCCC1CCCCC1CCCOO.png,2024-05-03 15:00:01
+CC(C)Cc1ccc(cc1)C(C)C(O)=O,2024-05-07 09:35:06_CCCCc1ccccc1CCCOO.png,2024-05-07 09:35:06
+*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*,False,False
