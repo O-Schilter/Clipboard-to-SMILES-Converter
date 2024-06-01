@@ -15,6 +15,5 @@ PyInstaller.__main__.run([
     '--add-data=image_queue:image_queue',
     '--add-data=molscribe:molscribe',
     '--add-data=models--yujieq--MolScribe:models--yujieq--MolScribe',
-    '--exclude='
     '--noconfirm'
 ])
